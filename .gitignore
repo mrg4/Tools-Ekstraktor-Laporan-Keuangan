@@ -1,0 +1,26 @@
+# Output data and extraction results
+output/
+*.xlsx
+*.xls
+*.csv
+
+# Environment variables and secrets
+.env
+.env.*
+
+# Python Cache and Compiled files
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Python Virtual Environments
+venv/
+env/
+.venv/
+
+# IDE Configuration and System Files
+.vscode/
+.idea/
+*.swp
+.DS_Store

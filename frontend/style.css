@@ -1,0 +1,643 @@
+/*
+  Design rationale:
+  - Color: Dark background (#0F1419) for an analyst-grade tool. Accent: #2E86DE (institutional blue, not a generic gradient).
+    Chosen because financial professionals work on dark terminals; the blue signals trust without the AI-default purple.
+  - Typography: IBM Plex Sans. Institutional, legible at small sizes, designed for data contexts. Not a generic pick.
+  - Palette: 2 core colors (dark bg #0F1419, surface #1A2332) + 1 accent (#2E86DE) + neutrals.
+  - ENERGY 2 / RHYTHM 1 / MOTION 1: quiet, functional, hover states only.
+*/
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --color-bg: #0F1419;
+    --color-surface: #1A2332;
+    --color-surface-raised: #22304A;
+    --color-border: #2A3A52;
+    --color-border-focus: #2E86DE;
+    --color-accent: #2E86DE;
+    --color-accent-hover: #3A95ED;
+    --color-accent-muted: rgba(46, 134, 222, 0.12);
+    --color-text-primary: #E8ECF1;
+    --color-text-secondary: #8899AA;
+    --color-text-muted: #5C6F82;
+    --color-success: #27AE60;
+    --color-error: #E74C3C;
+    --color-error-bg: rgba(231, 76, 60, 0.1);
+    --color-warning: #F39C12;
+
+    --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 40px;
+    --space-2xl: 64px;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    line-height: 1.55;
+}
+
+/* Focus: visible ring on keyboard focus, none on mouse */
+:focus-visible {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.app-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.app-header {
+    margin-bottom: var(--space-xl);
+}
+
+.app-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.app-subtitle {
+    margin-top: var(--space-sm);
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    max-width: 560px;
+    line-height: 1.6;
+}
+
+.extraction-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+}
+
+.form-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+}
+
+.section-heading {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-sm);
+}
+
+.section-description {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-md);
+}
+
+/* Dropzone */
+.dropzone {
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-xl) var(--space-lg);
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.dropzone:hover,
+.dropzone:focus-visible {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-muted);
+}
+
+.dropzone.drag-over {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-muted);
+    border-style: solid;
+}
+
+.dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    pointer-events: none;
+}
+
+.dropzone-icon {
+    width: 40px;
+    height: 40px;
+    color: var(--color-text-muted);
+    transition: color 0.15s ease;
+}
+
+.dropzone:hover .dropzone-icon,
+.dropzone:focus-visible .dropzone-icon {
+    color: var(--color-accent);
+}
+
+.dropzone-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.dropzone-hint {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.file-input-hidden {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* File list */
+.file-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.file-list:empty {
+    margin-top: 0;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-surface-raised);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+}
+
+.file-item-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+}
+
+.file-item-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: var(--color-accent);
+}
+
+.file-item-name {
+    color: var(--color-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-item-size {
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.file-item-remove {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: color 0.1s ease, background-color 0.1s ease;
+}
+
+.file-item-remove:hover,
+.file-item-remove:focus-visible {
+    color: var(--color-error);
+    background-color: var(--color-error-bg);
+}
+
+/* Metrics checkboxes */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-sm);
+}
+
+.metric-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    user-select: none;
+}
+
+.metric-checkbox:hover {
+    background-color: var(--color-surface-raised);
+}
+
+.metric-checkbox input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.checkbox-visual {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--color-border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.1s ease, background-color 0.1s ease;
+}
+
+.checkbox-visual svg {
+    width: 14px;
+    height: 14px;
+    color: white;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.1s ease, transform 0.1s ease;
+}
+
+.metric-checkbox input:checked + .checkbox-visual {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.metric-checkbox input:checked + .checkbox-visual svg {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.metric-checkbox input:focus-visible + .checkbox-visual {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+/* Submit button */
+.form-actions {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.btn-extract {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: 14px var(--space-lg);
+    background-color: var(--color-accent);
+    color: white;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+    min-height: 48px;
+    position: relative;
+}
+
+.btn-extract:hover:not(:disabled) {
+    background-color: var(--color-accent-hover);
+}
+
+.btn-extract:active:not(:disabled) {
+    transform: scale(0.985);
+}
+
+.btn-extract:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-extract.loading .btn-label {
+    opacity: 0;
+}
+
+.btn-extract.loading .btn-spinner {
+    display: flex;
+}
+
+.btn-spinner {
+    display: none;
+    position: absolute;
+}
+
+.btn-spinner svg {
+    width: 22px;
+    height: 22px;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Status area */
+.status-area {
+    margin-top: var(--space-lg);
+}
+
+.status-area:empty {
+    display: none;
+}
+
+.status-message {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.status-message.success {
+    background: rgba(39, 174, 96, 0.1);
+    border: 1px solid rgba(39, 174, 96, 0.25);
+    color: var(--color-success);
+}
+
+.status-message.error {
+    background: var(--color-error-bg);
+    border: 1px solid rgba(231, 76, 60, 0.25);
+    color: var(--color-error);
+}
+
+.status-message.info {
+    background: var(--color-accent-muted);
+    border: 1px solid rgba(46, 134, 222, 0.25);
+    color: var(--color-accent);
+}
+
+/* Mobile: the layout is already single-column, so the mobile
+   adjustments are padding/type scale reductions, not a restructure. */
+@media (max-width: 600px) {
+    .app-container {
+        padding: var(--space-lg) var(--space-md);
+    }
+
+    .form-section {
+        padding: var(--space-md);
+    }
+
+    .dropzone {
+        padding: var(--space-lg) var(--space-md);
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .file-item {
+        flex-wrap: wrap;
+    }
+
+    .file-item-size {
+        order: 3;
+        margin-left: 26px;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   MODERN ACCORDION & 85+ METRICS UI STYLES (DARK THEME)
+   ────────────────────────────────────────────────────────────────────── */
+.metrics-header-row {
+    margin-bottom: 1rem;
+}
+
+.metrics-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.metrics-search {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+}
+
+.metrics-search .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: var(--color-text-muted);
+}
+
+.metrics-search input {
+    width: 100%;
+    padding: 0.625rem 1rem 0.625rem 2.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    transition: all 0.2s ease;
+}
+
+.metrics-search input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.metrics-search input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+.metrics-bulk-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-text, .btn-text-small {
+    background: none;
+    border: none;
+    color: var(--color-accent);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.btn-text:hover, .btn-text-small:hover {
+    background-color: var(--color-accent-muted);
+}
+
+.btn-text-small {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.accordion-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.accordion-section {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--color-surface);
+}
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: var(--color-surface-raised);
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.accordion-header.active {
+    border-bottom-color: var(--color-border);
+}
+
+.accordion-title-area {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    flex: 1;
+    user-select: none;
+}
+
+.accordion-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--color-text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.accordion-header.active .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-title {
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.badge {
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.badge.has-selections {
+    background: var(--color-accent);
+    color: white;
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.accordion-content.open {
+    max-height: 3000px; 
+}
+
+.metrics-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+    padding: 1.25rem;
+}
+
+.metric-checkbox.modern {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: var(--color-bg);
+    align-items: flex-start;
+}
+
+.metric-checkbox.modern:hover {
+    border-color: var(--color-accent);
+    background-color: var(--color-surface-raised);
+}
+
+.metric-checkbox.modern:has(input:checked) {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-muted);
+}
+
+.metric-checkbox.modern .metric-label {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    padding-top: 1px;
+}
