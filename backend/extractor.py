@@ -384,17 +384,17 @@ def extract_metrics_from_sheet(wb, target_sheet_codes: list[str], target_mapping
 SECTOR_ROUTING = {
     "1": {  # Umum (ASII, UNVR, ACES, dll.)
         "bs": ["1210000", "1220000"],
-        "is": ["1311000", "1321000"],
+        "is": ["1311000", "1321000", "1312000", "1322000"],
         "cf": ["1510000", "1520000"],
     },
     "2": {  # Properti
         "bs": ["2210000", "2220000"],
-        "is": ["2311000", "2321000"],
+        "is": ["2311000", "2321000", "2312000", "2322000"],
         "cf": ["2510000", "2520000"],
     },
     "3": {  # Infrastruktur / Telco (TLKM, dll.)
         "bs": ["3210000", "3220000"],
-        "is": ["3311000", "3321000"],
+        "is": ["3311000", "3321000", "3312000", "3322000"],
         "cf": ["3510000", "3520000"],
     },
     "4": {  # Perbankan / Keuangan / Syariah (BBCA, BMRI, dll.)
@@ -511,6 +511,37 @@ def _extract_banking_revenue(wb, is_targets: list[str]) -> float | None:
     return None
 
 
+def _extract_banking_cash(wb, cf_targets: list[str]) -> float | None:
+    """Fallback khusus sektor Perbankan/Keuangan untuk mengambil Kas dari sheet Arus Kas."""
+    TARGETS = [
+        "kas dan setara kas arus kas, akhir periode",
+        "kas dan setara kas pada akhir tahun",
+        "kas dan setara kas akhir periode"
+    ]
+    for code in cf_targets:
+        sheet_to_use = None
+        for sheet_name in wb.sheetnames:
+            if code in sheet_name:
+                sheet_to_use = sheet_name
+                break
+        if not sheet_to_use:
+            continue
+
+        ws = wb[sheet_to_use]
+        for row in ws.iter_rows(min_row=1, values_only=False):
+            for cell_idx, cell in enumerate(row):
+                if cell.value is None:
+                    continue
+                normalized = " ".join(str(cell.value).replace('\xa0', ' ').strip().lower().split())
+                
+                for t in TARGETS:
+                    if t == normalized or t in normalized:
+                        for nc in row[cell_idx + 1:]:
+                            val = parse_cell_number(nc.value)
+                            if val is not None:
+                                return val
+    return None
+
 # ──────────────────────────────────────────────────────────────────────
 # MAIN EXTRACTION ENTRY POINT
 # ──────────────────────────────────────────────────────────────────────
@@ -561,6 +592,13 @@ def extract_bei_report(excel_path: str, selected_metrics: list[str]) -> dict:
         # Ekstrak data Arus Kas
         cf_metrics = extract_metrics_from_sheet(wb, cf_targets, CASH_FLOW_MAPPING)
         result.update(cf_metrics)
+
+        # 4. Fallback Kas Sektor Perbankan/Keuangan
+        # JANGAN gunakan hasil Neraca, selalu ambil dari Arus Kas akhir periode
+        if sector_prefix == "4":
+            banking_cash = _extract_banking_cash(wb, cf_targets)
+            if banking_cash is not None:
+                result["Kas dan setara kas"] = banking_cash
 
     finally:
         wb.close()
